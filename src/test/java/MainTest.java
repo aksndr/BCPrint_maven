@@ -1,5 +1,5 @@
+import com.aksndr.BCPrint;
 import org.junit.Assert;
-import ru.aksndr.BCPrint;
 
 import java.io.FileOutputStream;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package ru.aksndr;
+package com.aksndr;
 
 import com.lowagie.text.Utilities;
 import com.lowagie.text.pdf.Barcode128;
@@ -12,6 +12,8 @@ import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import org.docx4j.wml.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import javax.xml.bind.JAXBElement;
@@ -32,6 +34,8 @@ public class BCPrint {
     private MainDocumentPart wordDocumentPart;
     private ObjectFactory factory;
 
+    Logger logger = LoggerFactory.getLogger(BCPrint.class);
+
     public BCPrint() {
     }
 
@@ -45,26 +49,6 @@ public class BCPrint {
         tcPr.setTcW(cellWidth);
 
         tableCell.setTcPr(tcPr);
-    }
-
-    private static Map<String, Object> succeed() {
-        Map<String, Object> result = new HashMap<>();
-        result.put("ok", true);
-        return result;
-    }
-
-    private static Map<String, Object> succeed(Object value) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("ok", true);
-        result.put("value", value);
-        return result;
-    }
-
-    private static Map<String, Object> failed(String errMsg) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("ok", false);
-        result.put("errMsg", errMsg);
-        return result;
     }
 
     public Map<String, Object> getSheet(List<String> barcodes) {
@@ -106,6 +90,7 @@ public class BCPrint {
             try {
                 bos.close();
             } catch (IOException e) {
+                logger.error(e.toString());
                 e.printStackTrace();
             }
 
@@ -158,14 +143,16 @@ public class BCPrint {
     private Drawing getBarcodeDrawning(String s) throws Exception {
 
         byte[] bytes = getBarcodeBytes(s);
-        BinaryPartAbstractImage imagePart = BinaryPartAbstractImage.createImagePart(wordMLPackage, bytes);
-        Inline inline = imagePart.createImageInline(null, s, 0, 1, 3000, false);
         org.docx4j.wml.Drawing drawing = factory.createDrawing();
-        drawing.getAnchorOrInline().add(inline);
+        if (bytes!=null){
+            BinaryPartAbstractImage imagePart = BinaryPartAbstractImage.createImagePart(wordMLPackage, bytes);
+            Inline inline = imagePart.createImageInline(null, s, 0, 1, 3000, false);
+            drawing.getAnchorOrInline().add(inline);
+        }
         return drawing;
     }
 
-    private byte[] getBarcodeBytes(String s) throws IOException {
+    private byte[] getBarcodeBytes(String s) {
         Barcode128 code = new Barcode128();
         code.setCode(s);
         code.setBaseline(12);
@@ -183,7 +170,7 @@ public class BCPrint {
             baos.flush();
             imageBytes = baos.toByteArray();
         } catch (Exception e) {
-
+            logger.error(e.toString());
         } finally {
             IOUtils.closeQuietly(baos);
         }
@@ -245,5 +232,25 @@ public class BCPrint {
         borders.setInsideH(border);
         borders.setInsideV(border);
         table.getTblPr().setTblBorders(borders);
+    }
+
+    private static Map<String, Object> succeed() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("ok", true);
+        return result;
+    }
+
+    private static Map<String, Object> succeed(Object value) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("ok", true);
+        result.put("value", value);
+        return result;
+    }
+
+    private static Map<String, Object> failed(String errMsg) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("ok", false);
+        result.put("errMsg", errMsg);
+        return result;
     }
 }
